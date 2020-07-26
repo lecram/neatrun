@@ -1,0 +1,106 @@
+#! /bin/sh
+
+if [ $# -eq 0 ]; then
+    printf "%s\n" "neatcc -- ncc/nld wrapper" >&2
+    exit 1
+fi
+
+if [ "$NCC" = "" ]; then NCC="ncc"; fi
+if [ "$NLD" = "" ]; then NLD="nld"; fi
+if [ "$NHD" = "" ]; then NHD="."; fi
+if [ "$NLC" = "" ]; then NLC="."; fi
+
+if [ "$1" = "-v" ]; then
+    printf "%s\n" "neatcc -- ncc/nld wrapper"
+    printf "compiler: %s\n" "$NCC"
+    printf "linker: %s\n" "$NLD"
+    printf "headers: %s\n" "$NHD"
+    printf "libc: %s\n" "$NLC"
+    exit 0
+fi
+
+nccargs=" -I$NHD"
+nldargs=""
+objects=""
+output=""
+compile="yes"
+link="yes"
+
+waiting_arg="neither"
+for arg in "$@"; do
+    case $waiting_arg in
+        neither)
+            if [ ${arg#-} != $arg ]; then   # $arg starts with slash
+                case ${arg#-} in
+                    I*|D*|O*|W*)
+                        nccargs="$nccargs $arg"
+                        if [ ${#arg} -eq 2 ]; then
+                            waiting_arg="ncc"
+                        fi
+                    ;;
+                    c)
+                        link="no"
+                    ;;
+                    E)
+                        nccargs="$nccargs $arg"
+                        link="no"
+                    ;;
+                    l*|L*|m*|e*)
+                        nldargs="$nldargs $arg"
+                        if [ ${#arg} -eq 2 ]; then
+                            waiting_arg="nld"
+                        fi
+                    ;;
+                    s|g|p)
+                        nldargs="$nldargs $arg"
+                    ;;
+                    o*)
+                        if [ ${#arg} -eq 2 ]; then
+                            waiting_arg="output"
+                        else
+                            output="${arg#-o}"
+                        fi
+                    ;;
+                    *)
+                        printf "unknown option: %s\n" $arg >&2
+                        exit 2
+                esac
+            else
+                nccargs="$nccargs $arg"
+                object=${arg//.c/.o}
+                if [ $arg = $object ]; then
+                    compile="no"
+                fi
+                objects="$objects $object"
+                nldargs="$nldargs $object"
+            fi
+        ;;
+        ncc)
+            nccargs="$nccargs$arg"
+            waiting_arg="neither"
+        ;;
+        nld)
+            nldargs="$nldargs $arg"
+            waiting_arg="neither"
+        ;;
+        output)
+            output=$arg
+            waiting_arg="neither"
+    esac
+done
+
+if [ $link = "yes" ]; then
+    if [ $compile = "yes" ]; then
+        $NCC$nccargs || exit
+    fi
+    nldargs="$nldargs $NLC/start.o $NLC/libc.a"
+    if [ "$output" != "" ]; then
+        nldargs="$nldargs -o$output"
+    fi
+    $NLD$nldargs && rm -f $objects
+else
+    if [ "$output" != "" ]; then
+        nccargs="$nccargs -o$output"
+    fi
+    $NCC$nccargs
+fi
