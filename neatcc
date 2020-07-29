@@ -26,7 +26,6 @@ nldargs=""
 asm_sources=""
 c_sources=""
 objects=""
-output=""
 link="yes"
 
 waiting_arg="neither"
@@ -48,7 +47,7 @@ for arg in "$@"; do
                         nccargs="$nccargs $arg"
                         link="no"
                     ;;
-                    l*|L*|m*|e*)
+                    l*|L*|m*|e*|o*)
                         nldargs="$nldargs $arg"
                         if [ ${#arg} -eq 2 ]; then
                             waiting_arg="nld"
@@ -56,13 +55,6 @@ for arg in "$@"; do
                     ;;
                     s|g|p)
                         nldargs="$nldargs $arg"
-                    ;;
-                    o*)
-                        if [ ${#arg} -eq 2 ]; then
-                            waiting_arg="output"
-                        else
-                            output="${arg#-o}"
-                        fi
                     ;;
                     *)
                         printf "unknown option: %s\n" $arg >&2
@@ -95,10 +87,6 @@ for arg in "$@"; do
         nld)
             nldargs="$nldargs $arg"
             waiting_arg="neither"
-        ;;
-        output)
-            output=$arg
-            waiting_arg="neither"
     esac
 done
 
@@ -110,9 +98,6 @@ if [ -n "$c_sources" ]; then
 fi
 if [ $link = "yes" ]; then
     nldargs="$nldargs $NLC/start.o $NLC/libc.a"
-    if [ -n "$output" ]; then
-        nldargs="$nldargs -o$output"
-    fi
     $NLD$nldargs $objects && rm -f $objects
 fi
 
