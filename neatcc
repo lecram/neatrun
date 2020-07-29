@@ -1,17 +1,19 @@
 #! /bin/sh
 
 if [ $# -eq 0 ]; then
-    printf "%s\n" "neatcc -- ncc/nld wrapper" >&2
+    printf "%s\n" "neatcc -- neatas/ncc/nld wrapper" >&2
     exit 1
 fi
 
+if [ "$NAS" = "" ]; then NAS="neatas"; fi
 if [ "$NCC" = "" ]; then NCC="ncc"; fi
 if [ "$NLD" = "" ]; then NLD="nld"; fi
 if [ "$NHD" = "" ]; then NHD="."; fi
 if [ "$NLC" = "" ]; then NLC="."; fi
 
 if [ "$1" = "-v" ]; then
-    printf "%s\n" "neatcc -- ncc/nld wrapper"
+    printf "%s\n" "neatcc -- neatas/ncc/nld wrapper"
+    printf "assembler: %s\n" "$NAS"
     printf "compiler: %s\n" "$NCC"
     printf "linker: %s\n" "$NLD"
     printf "headers: %s\n" "$NHD"
@@ -21,9 +23,10 @@ fi
 
 nccargs=" -I$NHD"
 nldargs=""
+asm_sources=""
+c_sources=""
 objects=""
 output=""
-compile="yes"
 link="yes"
 
 waiting_arg="neither"
@@ -66,13 +69,23 @@ for arg in "$@"; do
                         exit 2
                 esac
             else
-                nccargs="$nccargs $arg"
-                object=${arg//.c/.o}
-                if [ $arg = $object ]; then
-                    compile="no"
-                fi
+                case "$arg" in
+                    *.s)
+                        asm_sources="$asm_sources $arg"
+                        object=${arg//.s/.o}
+                    ;;
+                    *.c)
+                        c_sources="$c_sources $arg"
+                        object=${arg//.c/.o}
+                    ;;
+                    *.o)
+                        object="$arg"
+                    ;;
+                    *)
+                        printf "invalid argument: %s\n" $arg >&2
+                        exit 2
+                esac
                 objects="$objects $object"
-                nldargs="$nldargs $object"
             fi
         ;;
         ncc)
@@ -89,18 +102,17 @@ for arg in "$@"; do
     esac
 done
 
+if [ -n "$asm_sources" ]; then
+    $NAS $asm_sources || exit
+fi
+if [ -n "$c_sources" ]; then
+    $NCC$nccargs $c_sources || exit
+fi
 if [ $link = "yes" ]; then
-    if [ $compile = "yes" ]; then
-        $NCC$nccargs || exit
-    fi
     nldargs="$nldargs $NLC/start.o $NLC/libc.a"
-    if [ "$output" != "" ]; then
+    if [ -n "$output" ]; then
         nldargs="$nldargs -o$output"
     fi
-    $NLD$nldargs && rm -f $objects
-else
-    if [ "$output" != "" ]; then
-        nccargs="$nccargs -o$output"
-    fi
-    $NCC$nccargs
+    $NLD$nldargs $objects && rm -f $objects
 fi
+
