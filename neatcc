@@ -97,7 +97,7 @@ if [ -n "$c_sources" ]; then
     $NCC$nccargs $c_sources || exit
 fi
 if [ $link = "yes" ]; then
-    nldargs="$nldargs $NLC/start.o $NLC/libc.a"
-    $NLD$nldargs $objects && rm -f $objects
+    nldargs="$nldargs $objects $NLC/start.o $NLC/libc.a"
+    $NLD$nldargs && rm -f $objects
 fi
 
