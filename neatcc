@@ -98,6 +98,9 @@ if [ -n "$c_sources" ]; then
 fi
 if [ $link = "yes" ]; then
     nldargs="$nldargs $objects $NLC/start.o $NLC/libc.a"
-    $NLD$nldargs && rm -f $objects
+    $NLD$nldargs || exit
+    if [ -n "$asm_sources$c_sources" ]; then
+        rm -f $objects
+    fi
 fi
 
