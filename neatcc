@@ -27,6 +27,7 @@ asm_sources=""
 c_sources=""
 objects=""
 link="yes"
+run="no"
 
 waiting_arg="neither"
 for arg in "$@"; do
@@ -55,6 +56,9 @@ for arg in "$@"; do
                     ;;
                     s|g|p)
                         nldargs="$nldargs $arg"
+                    ;;
+                    r)
+                        run="yes"
                     ;;
                     *)
                         printf "unknown option: %s\n" $arg >&2
@@ -101,6 +105,10 @@ if [ $link = "yes" ]; then
     $NLD$nldargs || exit
     if [ -n "$asm_sources$c_sources" ]; then
         rm -f $objects
+    fi
+    if [ $run = "yes" ]; then
+        ./a.out
+        rm -f ./a.out
     fi
 fi
 
