@@ -60,6 +60,10 @@ for arg in "$@"; do
                     r)
                         run="yes"
                     ;;
+                    R)
+                        run="yes"
+                        waiting_arg="run"
+                    ;;
                     *)
                         printf "unknown option: %s\n" $arg >&2
                         exit 2
@@ -91,6 +95,10 @@ for arg in "$@"; do
         nld)
             nldargs="$nldargs $arg"
             waiting_arg="neither"
+        ;;
+        run)
+            rargs="$arg"
+            waiting_arg="neither"
     esac
 done
 
@@ -107,7 +115,7 @@ if [ $link = "yes" ]; then
         rm -f $objects
     fi
     if [ $run = "yes" ]; then
-        ./a.out
+        ./a.out $rargs
         rm -f ./a.out
     fi
 fi
