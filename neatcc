@@ -110,13 +110,17 @@ if [ -n "$c_sources" ]; then
 fi
 if [ $link = "yes" ]; then
     nldargs="$nldargs $objects $NLC/start.o $NLC/libc.a"
+    if [ $run = "yes" ]; then
+        tmpbin="/tmp/tmp.out"
+        nldargs="$nldargs -o$tmpbin"
+    fi
     $NLD$nldargs || exit
     if [ -n "$asm_sources$c_sources" ]; then
         rm -f $objects
     fi
     if [ $run = "yes" ]; then
-        ./a.out $rargs
-        rm -f ./a.out
+        $tmpbin $rargs
+        rm -f $tmpbin
     fi
 fi
 
