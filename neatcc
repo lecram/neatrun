@@ -72,11 +72,11 @@ for arg in "$@"; do
                 case "$arg" in
                     *.s)
                         asm_sources="$asm_sources $arg"
-                        object=${arg//.s/.o}
+                        object=${arg%.s}.o
                     ;;
                     *.c)
                         c_sources="$c_sources $arg"
-                        object=${arg//.c/.o}
+                        object=${arg%.c}.o
                     ;;
                     *.o)
                         object="$arg"
