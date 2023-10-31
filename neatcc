@@ -109,6 +109,13 @@ if [ -n "$c_sources" ]; then
     $NCC$nccargs $c_sources || exit
 fi
 if [ $link = "yes" ]; then
+    for obj in start.o libc.a; do
+        if [ ! -f "$NLC/$obj" ]; then
+            printf "$obj not found in '%s'\n" "$NLC" >&2
+            printf "make sure to set \$NLC to neatlibc location\n" >&2
+            exit 2
+        fi
+    done
     nldargs="$nldargs $objects $NLC/start.o $NLC/libc.a"
     if [ $run = "yes" ]; then
         tmpbin="/tmp/tmp.out"
