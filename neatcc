@@ -132,4 +132,3 @@ if [ $link = "yes" ]; then
         exit $stt
     fi
 fi
-
